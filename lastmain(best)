@@ -1,0 +1,139 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart'; // Bluetooth kütüphanesi
+import 'package:flutter/services.dart';
+import 'package:collection/collection.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Arduino Bağlantı Testi',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: ArduinoBaglantiTesti(),
+    );
+  }
+}
+
+class ArduinoBaglantiTesti extends StatefulWidget {
+  @override
+  _ArduinoBaglantiTestiState createState() => _ArduinoBaglantiTestiState();
+}
+
+class _ArduinoBaglantiTestiState extends State<ArduinoBaglantiTesti> {
+  String arduinoDurum = 'Bağlantı bekleniyor...';
+
+  FlutterBlue flutterBlue = FlutterBlue.instance; // Bluetooth örneği
+
+  Future<void> testArduinoBaglantisi() async {
+    try {
+      List<ScanResult> scanResults = [];
+
+      // Bluetooth cihazlarını tara
+      flutterBlue.startScan(timeout: Duration(seconds: 4));
+      flutterBlue.scanResults.listen((results) {
+        for (ScanResult r in results) {
+          scanResults.add(r);
+        }
+      });
+
+      // Bekle ve cihazları bul
+      await Future.delayed(Duration(seconds: 4));
+
+      ScanResult? scanResult = scanResults.firstWhereOrNull(
+            (result) => result.device.name == 'YourDeviceName', // Arduino'nun adını buraya yazın
+      );
+
+
+      if (scanResult == null) {
+        setState(() {
+          arduinoDurum = 'Arduino bulunamadı';
+        });
+        return;
+      }
+
+      // Arduino ile bağlantıyı başlat
+      await scanResult.device.connect();
+
+      setState(() {
+        arduinoDurum = 'Arduino ile bağlantı başarılı!';
+      });
+    } catch (e) {
+      setState(() {
+        arduinoDurum = 'Hata: $e';
+      });
+    }
+  }
+
+  // Arduino'ya sinyal gönder
+  Future<void> arduinoyaSinyalGonder(String direction) async {
+    try {
+      // Yön sinyalini Bluetooth üzerinden göndermek için gerekli kodu buraya ekleyin
+    } catch (e) {
+      // Hata durumunda buraya düşeriz.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Arduino Bağlantı Testi'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              arduinoDurum,
+              style: TextStyle(fontSize: 18.0),
+            ),
+            SizedBox(height: 20.0),
+            ElevatedButton(
+              onPressed: testArduinoBaglantisi,
+              child: Text('Arduino Bağlantısını Test Et'),
+            ),
+            SizedBox(height: 20.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.arrow_upward),
+                  onPressed: () => arduinoyaSinyalGonder('W'),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: () => arduinoyaSinyalGonder('A'),
+                ),
+                SizedBox(width: 20.0),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward),
+                  onPressed: () => arduinoyaSinyalGonder('D'),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.arrow_downward),
+                  onPressed: () => arduinoyaSinyalGonder('S'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
